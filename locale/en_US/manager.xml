@@ -387,4 +387,16 @@ Select a model for handling these aspects of the editorial process. (To designat
 
 	<message key="grid.series.pathAlphaNumeric">The series path must consist of only letters and numbers.</message>
 	<message key="grid.series.pathExists">The series path already exists. Please enter a unique path.</message>
+
+	<!-- settings form -->
+	<message key="plugins.importexport.common.missingRequirements">Plugin requirements not met</message>
+	<message key="plugins.importexport.common.error.DOIsNotAvailable">In order to use this plugin please go to the "Public Identifier" plugin category, enable and configure the DOI plugin and specify a valid DOI prefix there.</message>
+	<message key="plugins.importexport.common.error.pluginNotConfigured">The plugin is not fully set up.</message>
+	<message key="plugins.importexport.common.error.noDOIContentObjects">No publishing objects are selected for DOI assignment in the DOI public identifier plugin, so there is no deposit or export possibility in this plugin.</message>
+	<message key="plugins.importexport.common.settings.form.password">Password</message>
+	<message key="plugins.importexport.common.settings.form.password.description">Please note that the password will be saved as plain text, i.e. not encrypted.</message>
+	<!-- plugin tabs -->
+	<message key="plugins.importexport.common.settings">Settings</message>
+	<message key="plugins.importexport.common.settings.DOIPluginSettings">DOI Plugin Settings</message>
+	<message key="plugins.importexport.common.export.articles">Monographs</message>
 </locale>

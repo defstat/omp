@@ -505,6 +505,65 @@ class PublishedMonographDAO extends MonographDAO {
 
 		return new DAOResultFactory($result, $this, '_fromRow');
 	}
+
+	/**
+	 * Get all published submissions (eventually with a pubId assigned and) matching the specified settings.
+	 * @param $contextId integer optional
+	 * @param $pubIdType string
+	 * @param $title string optional
+	 * @param $author string optional
+	 * @param $pubIdSettingName string optional
+	 * (e.g. crossref::status or crossref::registeredDoi)
+	 * @param $pubIdSettingValue string optional
+	 * @param $rangeInfo DBResultRange optional
+	 * @return DAOResultFactory
+	 */
+	function getExportable($contextId, $pubIdType = null, $title = null, $author = null, $pubIdSettingName = null, $pubIdSettingValue = null, $rangeInfo = null) {
+		$params = array();
+		if ($pubIdSettingName) {
+			$params[] = $pubIdSettingName;
+		}
+		$params = array_merge($params, $this->getFetchParameters()); // because of the neccessary section row names in _fromRow
+		$params[] = (int) $contextId;
+		if ($pubIdType) {
+			$params[] = 'pub-id::'.$pubIdType;
+		}
+		if ($title) {
+			$params[] = 'title';
+			$params[] = AppLocale::getLocale();
+			$params[] = '%' . $title . '%';
+		}
+		if ($author) array_push($params, $authorQuery = '%' . $author . '%', $authorQuery, $authorQuery);
+		import('classes.plugins.PubObjectsExportPlugin');
+		if ($pubIdSettingName && $pubIdSettingValue && $pubIdSettingValue != EXPORT_STATUS_NOT_DEPOSITED) {
+			$params[] = $pubIdSettingValue;
+		}
+
+		$result = $this->retrieveRange(
+			'SELECT	s.*, ps.*,
+				' . $this->getFetchColumns() . '
+			FROM	published_submissions ps
+				LEFT JOIN submissions s ON (s.submission_id = ps.submission_id)
+				' . ($pubIdType != null?' LEFT JOIN submission_settings ss ON (s.submission_id = ss.submission_id)':'')
+				. ($title != null?' LEFT JOIN submission_settings sst ON (s.submission_id = sst.submission_id)':'')
+				. ($author != null?' LEFT JOIN authors au ON (s.submission_id = au.submission_id)':'')
+				. ($pubIdSettingName != null?' LEFT JOIN submission_settings sss ON (s.submission_id = sss.submission_id AND sss.setting_name = ?)':'')
+				. ' ' . $this->getFetchJoins() .'
+			WHERE
+				s.context_id = ?
+				' . ($pubIdType != null?' AND ss.setting_name = ? AND ss.setting_value IS NOT NULL':'')
+				. ($title != null?' AND (sst.setting_name = ? AND sst.locale = ? AND sst.setting_value LIKE ?)':'')
+				. ($author != null?' AND (au.first_name LIKE ? OR au.middle_name LIKE ? OR au.last_name LIKE ?)':'')
+				. (($pubIdSettingName != null && $pubIdSettingValue != null && $pubIdSettingValue == EXPORT_STATUS_NOT_DEPOSITED)?' AND sss.setting_value IS NULL':'')
+				. (($pubIdSettingName != null && $pubIdSettingValue != null && $pubIdSettingValue != EXPORT_STATUS_NOT_DEPOSITED)?' AND sss.setting_value = ?':'')
+				. (($pubIdSettingName != null && is_null($pubIdSettingValue))?' AND (sss.setting_value IS NULL OR sss.setting_value = \'\')':'')
+			. ' ORDER BY ps.date_published DESC, s.submission_id DESC',
+			$params,
+			$rangeInfo
+		);
+
+		return new DAOResultFactory($result, $this, '_fromRow');
+	}
 }
 
 ?>
