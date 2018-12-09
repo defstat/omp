@@ -65,7 +65,10 @@ class AuthorDAO extends PKPAuthorDAO {
 				a.user_group_id AS user_group_id,
 				a.include_in_browse AS include_in_browse,
 				0 AS show_title,
-				a.country
+				a.country,
+				a.submission_version,
+				a.prev_ver_id,
+				a.is_current_submission_version = ?
 			FROM	authors a
 				LEFT JOIN author_settings aspl ON (a.author_id = aspl.author_id AND aspl.setting_name = ? AND aspl.locale = ?)
 				LEFT JOIN author_settings asl ON (a.author_id = asl.author_id AND asl.setting_name = ? AND asl.locale = ?)
@@ -79,7 +82,7 @@ class AuthorDAO extends PKPAuthorDAO {
 			$rangeInfo
 		);
 
-		return new DAOResultFactory($result, $this, '_fromRow');
+		return $this->retrieveVersion(new DAOResultFactory($result, $this, '_fromRow'));
 	}
 
 	/**

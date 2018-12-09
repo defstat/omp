@@ -133,11 +133,11 @@ class PublishedMonograph extends Monograph {
 	 * @return array PublicationFormat
 	 */
 	function getPublicationFormats($onlyApproved = false) {
-		$publicationFormatDao = DAORegistry::getDAO('PublicationFormatDAO');
+		$publicationFormatDao = DAORegistry::getDAO('PublicationFormatDAO'); /** @var $publicationFormatDao PublicationFormatDAO */
 		if ($onlyApproved) {
-			$formats = $publicationFormatDao->getApprovedBySubmissionId($this->getId());
+			$formats = $publicationFormatDao->getApprovedBySubmissionId($this->getId(), $this->getSubmissionVersion());
 		} else {
-			$formats = $publicationFormatDao->getBySubmissionId($this->getId());
+			$formats = $publicationFormatDao->getBySubmissionId($this->getId(), null, $this->getSubmissionVersion());
 		}
 		return $formats->toArray();
 	}
@@ -176,7 +176,7 @@ class PublishedMonograph extends Monograph {
 	 * @return Iterator
 	 */
 	function getCategories() {
-		$publishedMonographDao = DAORegistry::getDAO('PublishedMonographDAO');
+		$publishedMonographDao = DAORegistry::getDAO('PublishedMonographDAO'); /** @var $publishedMonographDao PublishedMonographDAO */
 		return $publishedMonographDao->getCategories(
 			$this->getId(),
 			$this->getPressId()
@@ -244,6 +244,32 @@ class PublishedMonograph extends Monograph {
 		}
 
 		return $this->getAuthorString($preferred);
+	}
+
+	function getChapters() {
+		$chapterDao = DAORegistry::getDAO('ChapterDAO'); /** @var $chapterDao ChapterDAO */
+		return $chapterDao->getBySubmissionId($this->getId(), $this->getSubmissionVersion());
+	}
+
+	function getAvailableFiles() {
+		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /** @var $submissionFileDao SubmissionFileDAO */
+
+		$availableFiles = array_filter(
+			$submissionFileDao->getLatestRevisions($this->getId(), null, null, $this->getSubmissionVersion()),
+			function($a) {
+				return $a->getDirectSalesPrice() !== null && $a->getAssocType() == ASSOC_TYPE_PUBLICATION_FORMAT;
+			}
+		);
+
+		return $availableFiles;
+	}
+
+	function getIsCurrentSubmissionVersion() {
+		return $this->getData('isCurrentSubmissionVersion');
+	}
+
+	function setIsCurrentSubmissionVersion($isCurrentSubmissionVersion) {
+		return $this->setData('isCurrentSubmissionVersion', $isCurrentSubmissionVersion);
 	}
 }
 

@@ -262,6 +262,14 @@ class Application extends PKPApplication {
 		import('classes.payment.omp.OMPPaymentManager');
 		return new OMPPaymentManager($context);
 	}
+
+	static function getVersionedAssocTypes() {
+		return array(
+			ASSOC_TYPE_REPRESENTATION,
+			ASSOC_TYPE_SUBMISSION_FILE,
+		);
+	}
+
 }
 
 

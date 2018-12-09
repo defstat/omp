@@ -14,7 +14,9 @@
  * @brief Describes a monograph chapter (or section)
  */
 
-class Chapter extends DataObject {
+import('lib.pkp.classes.submission.SubmissionVersionedDataObject');
+
+class Chapter extends SubmissionVersionedDataObject {
 	/**
 	 * Constructor
 	 */
@@ -30,7 +32,7 @@ class Chapter extends DataObject {
 	 * @return int
 	 */
 	function getMonographId() {
-		return $this->getData('monographId');
+		return parent::getSubmissionId();
 	}
 
 	/**
@@ -38,7 +40,7 @@ class Chapter extends DataObject {
 	 * @param int $monographId
 	 */
 	function setMonographId($monographId) {
-		return $this->setData('monographId', $monographId);
+		return parent::setSubmissionId($monographId);
 	}
 
 	/**
