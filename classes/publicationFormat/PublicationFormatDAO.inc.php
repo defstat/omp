@@ -492,40 +492,64 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 
 	function newVersion($submissionId) {
 		parent::newVersion($submissionId);
+
+		$submissionDao = Application::getSubmissionDAO();
 		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /** @var $submissionFileDao SubmissionFileDAO */
 
 		list($oldVersion, $newVersion) = $this->provideSubmissionVersionsForNewVersion($submissionId);
 
-		$representationResults = $this->getBySubmissionId($submissionId, null, $newVersion);
-		$representations = $representationResults->toArray();
+		$representationResults = $this->getBySubmissionId($submissionId, null, $oldVersion);
+		$oldRepresentations = $representationResults->toArray();
+		$newRepresentationResults = $this->getBySubmissionId($submissionId, null, $newVersion);
+		$newRepresentations = $newRepresentationResults->toArray();
 
-		/** @var $representation PublicationFormat */
-		foreach($representations as $representation) {
-			$representation->setIsApproved(false);
-			$representation->setIsAvailable(0);
+		foreach ($oldRepresentations as $oldRepresentation) {
+			$newRepresentationId = null;
+			foreach ($newRepresentations as $newRepresentation) {
+				if ($newRepresentation->getPrevVerAssocId() == $oldRepresentation->getId()) {
+					$newRepresentationId = $newRepresentation->getId();
+					break;
+				}
+			}
 
-			$this->updateObject($representation);
+			$identificationCodeDao = DAORegistry::getDAO('IdentificationCodeDAO'); /** @var $identificationCodeDao IdentificationCodeDAO */
+			$oldIdentificationCodes = $identificationCodeDao->getByPublicationFormatId($oldRepresentation->getId());
+			$oldIdentificationCodesArray = $oldIdentificationCodes->toAssociativeArray();
+			foreach ($oldIdentificationCodesArray as $oldIdentificationCode) {
+				/** @var $oldIdentificationCode IdentificationCode */
+				$oldIdentificationCode->setPublicationFormatId($newRepresentationId);
 
-			//$oldRepresentation = $this->getById($oldRepresentationId);
+				$identificationCodeDao->insertObject($oldIdentificationCode);
+			}
 
-			// copy file and link copy to $publicationFormat version
-			$representationFiles = $submissionFileDao->getLatestRevisionsByAssocId(
-				ASSOC_TYPE_REPRESENTATION,
-				$representation->getId(),
-				$representation->getSubmissionId(),
-				null,
-				null,
-				$representation->getSubmissionVersion()
-			);
+			$marketDao = DAORegistry::getDAO('MarketDAO');
+			$oldMarkets = $marketDao->getByPublicationFormatId($oldRepresentation->getId());
+			$oldMarketsArray = $oldMarkets->toAssociativeArray();
+			foreach ($oldMarketsArray as $oldMarket) {
+				$oldMarket->setPublicationFormatId($newRepresentationId);
 
-			foreach ($representationFiles as $representationFile) {
-				/** @var $representationFile SubmissionFile */
-				$representationFile->setSalesType(null);
-				$representationFile->setDirectSalesPrice(null);
-				$representationFile->setViewable(false);
-				$submissionFileDao->updateObject($representationFile);
+				$marketDao->insertObject($oldMarket);
+			}
+
+			$publicationDateDao = DAORegistry::getDAO('PublicationDateDAO');
+			$oldPublicationDates = $publicationDateDao->getByPublicationFormatId($oldRepresentation->getId());
+			$oldPublicationDatesArray = $oldPublicationDates->toAssociativeArray();
+			foreach ($oldPublicationDatesArray as $oldPublicationDate) {
+				$oldPublicationDate->setPublicationFormatId($newRepresentationId);
+
+				$publicationDateDao->insertObject($oldPublicationDate);
+			}
+
+			$salesRightsDao = DAORegistry::getDAO('SalesRightsDAO');
+			$oldSalesRights = $salesRightsDao->getByPublicationFormatId($oldRepresentation->getId());
+			$oldSalesRightsArray = $oldSalesRights->toAssociativeArray();
+			foreach ($oldSalesRightsArray as $oldSalesRight) {
+				$oldSalesRight->setPublicationFormatId($newRepresentationId);
+
+				$salesRightsDao->insertObject($oldSalesRight);
 			}
 		}
+
 	}
 
 	function getMasterTableName() {
