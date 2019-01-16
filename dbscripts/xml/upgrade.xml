@@ -41,15 +41,6 @@
 		<data file="dbscripts/xml/upgrade/3.1.2_preupdate_pub_id.xml" condition="return $installer->columnExists('published_submissions', 'pub_id');" />
 	</upgrade>
 
-	<upgrade minversion="2.4.0.0" maxversion="3.2.0.9">
-		<data file="dbscripts/xml/upgrade/3.2.0_preupdate_versioning.xml" condition="return $installer->columnExists('published_submissions', 'date_published');" />
-	</upgrade>
-
-	<upgrade minversion="3.0.0.0" maxversion="3.2.0.9">
-		<data file="dbscripts/xml/upgrade/3.2.0_versioning.xml" />
-	</upgrade>
-
-
 	<!-- PKP schema components -->
 	<schema file="lib/pkp/xml/schema/common.xml" />
 	<schema file="lib/pkp/xml/schema/scheduledTasks.xml" />

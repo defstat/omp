@@ -145,7 +145,7 @@ class CatalogEntryCatalogMetadataForm extends Form {
 
 		$submission = $this->getMonograph();
 		$publishedMonographDao = DAORegistry::getDAO('PublishedMonographDAO');
-		$this->_publishedMonograph = $publishedMonographDao->getById($submission->getId(), null, false, $submission->getSubmissionVersion());
+		$this->_publishedMonograph = $publishedMonographDao->getBySubmissionId($submission->getId(), null, false, $submission->getSubmissionVersion());
 
 		$copyrightHolder = $submission->getCopyrightHolder(null);
 		$copyrightYear = $submission->getCopyrightYear();
@@ -253,8 +253,8 @@ class CatalogEntryCatalogMetadataForm extends Form {
 		$monograph = $this->getMonograph();
 		$monographDao = DAORegistry::getDAO('MonographDAO');
 		$publishedMonographDao = DAORegistry::getDAO('PublishedMonographDAO'); /** @var $publishedMonographDao PublishedMonographDAO */
-		$publishedMonograph = $publishedMonographDao->getById($monograph->getId(), null, false, $monograph->getSubmissionVersion()); /** @var $publishedMonograph PublishedMonograph */
-		$previousPublishedMonograph = $publishedMonographDao->getById($monograph->getId(), null, false, $monograph->getSubmissionVersion() - 1);
+		$publishedMonograph = $publishedMonographDao->getBySubmissionId($monograph->getId(), null, false, $monograph->getSubmissionVersion()); /** @var $publishedMonograph PublishedMonograph */
+		$previousPublishedMonograph = $publishedMonographDao->getBySubmissionId($monograph->getId(), null, false, $monograph->getSubmissionVersion() - 1);
 		$isExistingEntry = $publishedMonograph?true:false;
 		if (!$publishedMonograph) {
 			$publishedMonograph = $publishedMonographDao->newDataObject();

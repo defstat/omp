@@ -94,7 +94,7 @@ class MonographDAO extends SubmissionDAO {
 				(int) $monograph->getHideAuthor(),
 				(int) $monograph->getWorkType(),
 				$monograph->getCitations(),
-				$monograph->getCurrentSubmissionVersion(),
+				$monograph->getSubmissionVersion(),
 			)
 		);
 
@@ -141,7 +141,7 @@ class MonographDAO extends SubmissionDAO {
 				(int) $monograph->getWorkType(),
 				(int) $monograph->getHideAuthor(),
 				$monograph->getCitations(),
-				$monograph->getCurrentSubmissionVersion(),
+				$monograph->getSubmissionVersion(),
 				(int) $monograph->getId(),
 			)
 		);
@@ -203,7 +203,8 @@ class MonographDAO extends SubmissionDAO {
 				' . $this->getFetchJoins() . '
 			WHERE	s.context_id = ? AND
 				(ps.submission_id IS NULL OR ps.date_published IS NULL) AND
-				s.submission_progress = 0',
+				s.submission_progress = 0
+			AND ps.is_current_submission_version = 1',
 			$params
 		);
 

@@ -60,7 +60,7 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 	 * @param $pressId int optional
 	 * @return array The publication formats identified by setting.
 	 */
-	function getBySetting($settingName, $settingValue, $submissionId = null, $pressId = null, $submissionVersion) {
+	function getBySetting($settingName, $settingValue, $submissionId = null, $pressId = null, $submissionVersion = null) {
 		$params = array($settingName);
 
 
@@ -76,16 +76,22 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 			$sql .= 'INNER JOIN publication_format_settings pfs ON pf.publication_format_id = pfs.publication_format_id
 				WHERE	pfs.setting_name = ? AND pfs.setting_value = ?';
 		}
+
 		if ($submissionId) {
 			$params[] = (int) $submissionId;
-			$submissionVersion = $this->addSubmissionVersionParameter($params, $submissionId, $submissionVersion);
-			$sql .= ' AND pf.submission_id = ?'
-				. $this->createWhereClauseForSubmissionVersion($submissionVersion, 'pf');
+			$sql .= ' AND pf.submission_id = ?';
 		}
+
 		if ($pressId) {
 			$params[] = (int) $pressId;
 			$sql .= ' AND s.context_id = ?';
 		}
+
+		if ($submissionVersion) {
+			$params[] = (int) $submissionVersion;
+			$sql .= ($submissionVersion !== null ? ' AND pf.submission_version = ? ' : ' AND pf.is_current_submission_version = 1 ');
+		}
+
 		$sql .= ' ORDER BY s.context_id, pf.seq, pf.publication_format_id';
 		$result = $this->retrieve($sql, $params);
 
@@ -141,17 +147,20 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 	function getBySubmissionId($submissionId, $contextId = null, $submissionVersion = null) {
 		$params = array((int) $submissionId);
 		if ($contextId) $params[] = (int) $contextId;
-		$submissionVersion = $this->addSubmissionVersionParameter($params, $submissionId, $submissionVersion);
+
+		if ($submissionVersion) {
+			$params[] = (int) $submissionVersion;
+    }
 
 		return new DAOResultFactory(
 			$this->retrieve(
 				'SELECT pf.*
 				FROM	publication_formats pf ' .
 				($contextId?'INNER JOIN submissions s ON (pf.submission_id=s.submission_id) ':'') .
-				'WHERE	pf.submission_id=? ' .
-				($contextId?' AND s.context_id = ? ':'') .
-				$this->createWhereClauseForSubmissionVersion($submissionVersion, 'pf') .
-				'ORDER BY pf.seq',
+				'WHERE	pf.submission_id=? '
+				. ($contextId?' AND s.context_id = ? ':'')
+				. ($submissionVersion ? ' AND pf.submission_version = ? ' : ' AND pf.is_current_submission_version = 1 ')
+				. 'ORDER BY pf.seq',
 				$params
 			),
 			$this,
@@ -171,11 +180,12 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 			FROM	publication_formats pf
 			JOIN	submissions s ON (s.submission_id = pf.submission_id)
 			WHERE	s.context_id = ?
+			AND pf.is_current_submission_version = 1 
 			ORDER BY pf.seq',
 			$params
 		);
 
-		return $this->retrieveVersion(new DAOResultFactory($result, $this, '_fromRow'));
+		return new DAOResultFactory($result, $this, '_fromRow');
 	}
 
 	/**
@@ -185,13 +195,16 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 	 */
 	function getApprovedBySubmissionId($submissionId, $submissionVersion = null) {
 		$params = array((int) $submissionId);
-		$submissionVersion = $this->addSubmissionVersionParameter($params, $submissionId, $submissionVersion);
+
+		if ($submissionVersion) {
+			$params[] = (int) $submissionVersion;
+    }
 
 		$result = $this->retrieve(
 			'SELECT *
 			FROM	publication_formats
 			WHERE	submission_id = ? AND is_approved=1' .
-			$this->createWhereClauseForSubmissionVersion($submissionVersion)
+			($submissionVersion ? ' AND submission_version = ? ' : ' AND is_current_submission_version = 1')
 			.'ORDER BY seq',
 			$params
 		);
@@ -426,7 +439,11 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 			FROM publication_format_settings pft
 			INNER JOIN publication_formats p ON pft.publication_format_id = p.publication_format_id
 			INNER JOIN submissions s ON p.submission_id = s.submission_id
-			WHERE pft.setting_name = ? and pft.setting_value = ? and p.publication_format_id <> ? AND s.context_id = ?',
+			WHERE pft.setting_name = ?
+			AND pft.setting_value = ?
+			AND p.publication_format_id <> ?
+			AND s.context_id = ?
+			AND p.is_current_submission_version = 1',
 			array(
 				'pub-id::'.$pubIdType,
 				$pubId,

@@ -73,7 +73,7 @@ class AuthorDAO extends PKPAuthorDAO {
 				LEFT JOIN author_settings aspl ON (a.author_id = aspl.author_id AND aspl.setting_name = ? AND aspl.locale = ?)
 				LEFT JOIN author_settings asl ON (a.author_id = asl.author_id AND asl.setting_name = ? AND asl.locale = ?)
 				JOIN submissions s ON (a.submission_id = s.submission_id)
-			WHERE	s.status = ' . STATUS_PUBLISHED . ' ' .
+			WHERE a.is_current_submission_version = 1 AND	s.status = ' . STATUS_PUBLISHED . ' ' .
 				(isset($pressId)?'AND s.context_id = ? ':'') . '
 				AND (a.last_name IS NOT NULL AND a.last_name <> \'\')' .
 				$initialSql . '
@@ -82,7 +82,7 @@ class AuthorDAO extends PKPAuthorDAO {
 			$rangeInfo
 		);
 
-		return $this->retrieveVersion(new DAOResultFactory($result, $this, '_fromRow'));
+		return new DAOResultFactory($result, $this, '_fromRow');
 	}
 
 	/**

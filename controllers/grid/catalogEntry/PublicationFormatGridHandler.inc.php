@@ -319,10 +319,6 @@ class PublicationFormatGridHandler extends CategoryGridHandler {
 		$submission = $this->getSubmission();
 		$representation = $this->getAuthorizedContextObject(ASSOC_TYPE_REPRESENTATION);
 		$representationDao = Application::getRepresentationDAO();
-		//$representation = $representationDao->getById(
-		//  $request->getUserVar('representationId'),
-		//  $submission->getId()
-		//);
 
 		if (!$representation) return new JSONMessage(false, __('manager.setup.errorDeletingItem'));
 

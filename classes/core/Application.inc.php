@@ -246,13 +246,6 @@ class Application extends PKPApplication {
 		return new OMPPaymentManager($context);
 	}
 
-	static function getVersionedAssocTypes() {
-		return array(
-			ASSOC_TYPE_REPRESENTATION,
-			ASSOC_TYPE_SUBMISSION_FILE,
-		);
-	}
-
 	/**
 	 * @copydoc PKPApplication::getAllowMultipleContexts()
 	 */

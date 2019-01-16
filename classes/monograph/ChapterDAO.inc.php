@@ -28,16 +28,15 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 	 * @param $monographId int optional
 	 * @return Chapter
 	 */
-	function getChapter($chapterId, $monographId = null, $submissionVersion = null) {
+	function getChapter($chapterId, $monographId = null) {
 		$params = array((int) $chapterId);
 		if ($monographId !== null) {
 			$params[] = (int) $monographId;
 		}
-		$submissionVersion = $this->addSubmissionVersionParameter($params, $monographId, $submissionVersion);
 
 		$result = $this->retrieve(
-			'SELECT * FROM submission_chapters WHERE chapter_id = ?' . ($monographId !== null?' AND submission_id = ? ':'') .
-			$this->createWhereClauseForSubmissionVersion($submissionVersion),
+			'SELECT * FROM submission_chapters WHERE chapter_id = ?'
+			. ($monographId !== null?' AND submission_id = ? ':''),
 			$params
 		);
 
@@ -57,11 +56,15 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 	 */
 	function getChapters($monographId, $rangeInfo = null, $submissionVersion = null) {
 		$params = array((int) $monographId);
-		$submissionVersion = $this->addSubmissionVersionParameter($params, $monographId, $submissionVersion);
+		if ($submissionVersion !== null) {
+			$params[] = (int) $submissionVersion;
+    }
+
 		$result = $this->retrieveRange(
-			'SELECT * FROM submission_chapters WHERE submission_id = ?'
-			. $this->createWhereClauseForSubmissionVersion($submissionVersion)
-			. ' ORDER BY chapter_seq',
+			'SELECT * FROM submission_chapters
+			WHERE submission_id = ?'
+			. ($submissionVersion !== null ?' AND submission_version = ? ':' AND is_current_submission_version = 1')
+			. ' ORDER BY seq',
 			$params,
 			$rangeInfo
 		);
@@ -78,13 +81,13 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 		$result = $this->retrieve(
 			'SELECT	sc.*
 			FROM submission_chapters sc
-				INNER JOIN submissions s ON (sc.submission_id = s.submission_id)
-			WHERE s.context_id = ?',
+			INNER JOIN submissions s ON (sc.submission_id = s.submission_id)
+			WHERE s.context_id = ?
+			AND sc.is_current_submission_version = 1',
 			(int) $pressId
 		);
 
-
-		return $this->retrieveVersion(new DAOResultFactory($result, $this, '_fromRow'));
+		return new DAOResultFactory($result, $this, '_fromRow');
 	}
 
 	/**
@@ -124,10 +127,11 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 		$chapter = $this->newDataObject();
 		$chapter->setId($row['chapter_id']);
 		$chapter->setMonographId($row['submission_id']);
-		$chapter->setSequence($row['chapter_seq']);
+		$chapter->setSequence($row['seq']);
 		$chapter->setSubmissionVersion($row['submission_version']);
 		$chapter->setPrevVerAssocId($row['prev_ver_id']);
 		$chapter->setIsCurrentSubmissionVersion($row['is_current_submission_version']);
+
 		$this->getDataObjectSettings('submission_chapter_settings', 'chapter_id', $row['chapter_id'], $chapter);
 
 		HookRegistry::call('ChapterDAO::_fromRow', array(&$chapter, &$row));
@@ -152,7 +156,7 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 	function insertChapter($chapter) {
 		$this->update(
 			'INSERT INTO submission_chapters
-				(submission_id, chapter_seq, submission_version, prev_ver_id, is_current_submission_version)
+				(submission_id, seq, submission_version, prev_ver_id, is_current_submission_version)
 				VALUES
 				(?, ?, ?, ?, ?)',
 			array(
@@ -177,7 +181,7 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 		$this->update(
 			'UPDATE submission_chapters
 				SET	submission_id = ?,
-					chapter_seq = ?,
+					seq = ?,
 					submission_version = ?,
 					prev_ver_id = ?,
 					is_current_submission_version = ?
@@ -234,11 +238,16 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 		if ($monographId !== null) {
 			$params[] = (int) $monographId;
 		}
-		$submissionVersion = $this->addSubmissionVersionParameter($params, $monographId, $submissionVersion);
+
+		if ($submissionVersion !== null) {
+			$params[] = (int) $submissionVersion;
+    }
 
 		$result = $this->retrieve(
-			'SELECT chapter_id FROM submission_chapters' .
-			($monographId !== null?' WHERE submission_id = ?':'' . $this->createWhereClauseForSubmissionVersion($submissionVersion))
+			'SELECT chapter_id FROM submission_chapters
+			WHERE 1=1'
+			. ($monographId !== null ? ' AND submission_id = ?':'')
+			. ($submissionVersion !== null ? ' AND submission_version = ? ':' AND is_current_submission_version = 1')
 			. ' ORDER BY seq',
 			$params
 		);
@@ -274,9 +283,13 @@ class ChapterDAO extends SubmissionVersionedDAO implements PKPPubIdPluginDAO, IS
 		$result = $this->retrieve(
 			'SELECT COUNT(*)
 			FROM submission_chapter_settings scs
-			INNER JOIN submission_cahpers sc ON scs.chapter_id = sc.chapter_id
+			INNER JOIN submission_chapters sc ON scs.chapter_id = sc.chapter_id
 			INNER JOIN submissions s ON sc.submission_id = s.submission_id
-			WHERE scs.setting_name = ? and scs.setting_value = ? and sc.chapter_id <> ? AND s.context_id = ?',
+			WHERE scs.setting_name = ?
+			AND scs.setting_value = ?
+			AND sc.chapter_id <> ?
+			AND s.context_id = ?
+			AND sc.is_current_submission_version = 1',
 			array(
 				'pub-id::'.$pubIdType,
 				$pubId,
