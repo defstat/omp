@@ -534,18 +534,6 @@ class PublicationFormat extends Representation {
 
 		return join( __('monograph.publicationFormat.productDimensionsSeparator'), $dimensions );
 	}
-
-	function getFiles($fileStage = null, $submissionVersion = null) {
-		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /* @var $submissionFileDao SubmissionFileDAO */
-		$submissionFiles = $submissionFileDao->getLatestRevisionsByAssocId(
-			ASSOC_TYPE_REPRESENTATION,
-			$this->getId(),
-			$this->getMonographId(),
-			$this->getFileStage()
-		);
-
-		return $submissionFiles->toAssosiativeArray();
-	}
 }
 
 

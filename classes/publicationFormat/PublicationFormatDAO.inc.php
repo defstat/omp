@@ -503,6 +503,12 @@ class PublicationFormatDAO extends RepresentationDAO implements PKPPubIdPluginDA
 		$newRepresentationResults = $this->getBySubmissionId($submissionId, null, $newVersion);
 		$newRepresentations = $newRepresentationResults->toArray();
 
+		foreach ($newRepresentations as $newRepresentation) {
+			$newRepresentation->setIsAvailable(0);
+
+			$this->updateObject($newRepresentation);
+		}
+
 		foreach ($oldRepresentations as $oldRepresentation) {
 			$newRepresentationId = null;
 			foreach ($newRepresentations as $newRepresentation) {
