@@ -117,8 +117,8 @@ class PublishedMonographDAO extends MonographDAO {
 				ps.*,
 				' . $this->getFetchColumns() . '
 			FROM	submissions s
-				JOIN published_submissions ps ON (ps.submission_id = s.submission_id ' .(!$submissionVersion?' AND ps.published_submission_version = s.submission_version)':')'). '
-				' . $this->getFetchJoins() . '
+				JOIN published_submissions ps ON (ps.submission_id = s.submission_id)'
+				. $this->getFetchJoins() . '
 			WHERE	s.submission_id = ?'
 			. ($submissionVersion ? ' AND ps.published_submission_version = ? ' : ' AND ps.is_current_submission_version = 1')
 			. ($pressId?' AND s.context_id = ?':'')
@@ -150,17 +150,24 @@ class PublishedMonographDAO extends MonographDAO {
 				s.*,
 				' . $this->getFetchColumns() . '
 			FROM	published_submissions ps
-				JOIN submissions s ON (ps.submission_id = s.submission_id ' .(!$submissionVersion?' AND ps.published_submission_version = s.submission_version)':')'). '
-				' . $this->getFetchJoins();
+				JOIN submissions s ON (ps.submission_id = s.submission_id)'
+				. $this->getFetchJoins();
 
 		if (is_null($settingValue)) {
+			if ($submissionVersion) {
+        $params[] = (int) $submissionVersion;
+			}
 			$sql .= 'LEFT JOIN submission_settings sst ON s.submission_id = sst.submission_id AND sst.setting_name = ?
-				WHERE	(sst.setting_value IS NULL OR sst.setting_value = \'\')';
+				WHERE	(sst.setting_value IS NULL OR sst.setting_value = \'\') '
+				. ($submissionVersion ? ' AND ps.published_submission_version = ? ' : ' AND is_current_submission_version = 1');
 		} else {
 			$params[] = (string) $settingValue;
+			if ($submissionVersion) {
+        $params[] = (int) $submissionVersion;
+			}
 			$sql .= 'INNER JOIN submission_settings sst ON s.submission_id = sst.submission_id
-				WHERE	sst.setting_name = ? AND sst.setting_value = ? '.
-				($submissionVersion?' AND sst.submission_version = ?':'');
+				WHERE	sst.setting_name = ? AND sst.setting_value = ? '
+				. ($submissionVersion ? ' AND ps.published_submission_version = ? ' : ' AND is_current_submission_version = 1');
 		}
 		if ($pressId) {
 			$params[] = (int) $pressId;
