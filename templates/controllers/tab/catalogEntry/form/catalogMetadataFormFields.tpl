@@ -120,5 +120,7 @@
 		{/fbvFormSection}
 	{/fbvFormArea}
 
-	{fbvFormButtons id="catalogMetadataFormSubmit" submitText="common.save"}
+	{if !$formParams.hideSubmit}
+		{fbvFormButtons id="catalogMetadataFormSubmit" submitText="common.save"}
+	{/if}
 </form>

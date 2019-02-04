@@ -76,7 +76,6 @@ class CatalogEntryCatalogMetadataForm extends Form {
 		$templateMgr->assign('submissionId', $this->getMonograph()->getId());
 		$templateMgr->assign('submissionVersion', $this->getMonograph()->getSubmissionVersion());
 		$templateMgr->assign('stageId', $this->getStageId());
-		$templateMgr->assign('formParams', $this->getFormParams());
 		$templateMgr->assign('datePublished', $this->getMonograph()->getDatePublished());
 
 		$onixCodelistItemDao = DAORegistry::getDAO('ONIXCodelistItemDAO');
@@ -121,8 +120,17 @@ class CatalogEntryCatalogMetadataForm extends Form {
 		);
 		$templateMgr->assign('volumeEditorsListData', $volumeEditorsListData);
 
+		$submission = $this->getMonograph();
 		$publishedMonograph = $this->getPublishedMonograph();
 		if ($publishedMonograph) {
+			if ($submission->getCurrentSubmissionVersion() != $submission->getSubmissionVersion()) {
+				if (!isset($this->_formParams)) {
+					$this->_formParams = array();
+				}
+
+				$this->_formParams["readOnly"] = true;
+				$this->_formParams["hideSubmit"] = true;
+			}
 
 			// pre-select the existing values on the form.
 			$templateMgr->assign('audience', $publishedMonograph->getAudience());
@@ -132,6 +140,8 @@ class CatalogEntryCatalogMetadataForm extends Form {
 			$templateMgr->assign('audienceRangeExact', $publishedMonograph->getAudienceRangeExact());
 			$templateMgr->assign('coverImage', $publishedMonograph->getCoverImage());
 		}
+
+		$templateMgr->assign('formParams', $this->getFormParams());
 
 		return parent::fetch($request, $template, $display);
 	}
