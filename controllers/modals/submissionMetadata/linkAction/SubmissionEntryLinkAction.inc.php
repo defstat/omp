@@ -26,7 +26,7 @@ class SubmissionEntryLinkAction extends LinkAction {
 	 * none is passed, the first catalog entry tab will be opened.
 	 * @param $image string
 	 */
-	function __construct($request, $monographId, $stageId, $selectedFormatId = null, $image = 'information') {
+	function __construct($request, $monographId, $stageId, $selectedFormatId = null, $image = 'information', $submissionVersion = null) {
 		$actionArgs = array(
 			'submissionId' => $monographId,
 			'stageId' => $stageId,
@@ -34,6 +34,14 @@ class SubmissionEntryLinkAction extends LinkAction {
 		if ($selectedFormatId) {
 			$actionArgs['selectedFormatId'] = $selectedFormatId;
 		}
+
+		if (!isset($submissionVersion)) {
+			/** @var SubmissionDAO */
+			$submissionDao = Application::getSubmissionDAO();
+			$submissionVersion = $submissionDao->getCurrentSubmissionVersionById($monographId);
+		}
+
+		$actionArgs['submissionVersion'] = $submissionVersion;
 
 		$dispatcher = $request->getDispatcher();
 		import('lib.pkp.classes.linkAction.request.AjaxModal');

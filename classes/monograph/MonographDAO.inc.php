@@ -47,8 +47,8 @@ class MonographDAO extends SubmissionDAO {
 	 * @param $row array
 	 * @return Monograph
 	 */
-	function _fromRow($row) {
-		$monograph = parent::_fromRow($row);
+	function _fromRow($row, $submissionVersion = null) {
+		$monograph = parent::_fromRow($row, $submissionVersion);
 
 		$monograph->setSeriesId($row['series_id']);
 		$monograph->setSeriesPosition($row['series_position']);
@@ -77,9 +77,9 @@ class MonographDAO extends SubmissionDAO {
 		$monograph->stampModified();
 		$this->update(
 			sprintf('INSERT INTO submissions
-				(locale, context_id, series_id, series_position, language, date_submitted, date_status_modified, last_modified, status, submission_progress, stage_id, pages, hide_author, edited_volume, citations)
+				(locale, context_id, series_id, series_position, language, date_submitted, date_status_modified, last_modified, status, submission_progress, stage_id, pages, hide_author, edited_volume, citations, submission_version)
 				VALUES
-				(?, ?, ?, ?, ?, %s, %s, %s, ?, ?, ?, ?, ?, ?, ?)',
+				(?, ?, ?, ?, ?, %s, %s, %s, ?, ?, ?, ?, ?, ?, ?, ?)',
 				$this->datetimeToDB($monograph->getDateSubmitted()), $this->datetimeToDB($monograph->getDateStatusModified()), $this->datetimeToDB($monograph->getLastModified())),
 			array(
 				$monograph->getLocale(),
@@ -94,6 +94,7 @@ class MonographDAO extends SubmissionDAO {
 				(int) $monograph->getHideAuthor(),
 				(int) $monograph->getWorkType(),
 				$monograph->getCitations(),
+				$monograph->getSubmissionVersion(),
 			)
 		);
 
@@ -124,7 +125,8 @@ class MonographDAO extends SubmissionDAO {
 					stage_id = ?,
 					edited_volume = ?,
 					hide_author = ?,
-					citations = ?
+					citations = ?,
+					submission_version = ?
 				WHERE	submission_id = ?',
 				$this->datetimeToDB($monograph->getDateSubmitted()), $this->datetimeToDB($monograph->getDateStatusModified()), $this->datetimeToDB($monograph->getLastModified())),
 			array(
@@ -139,6 +141,7 @@ class MonographDAO extends SubmissionDAO {
 				(int) $monograph->getWorkType(),
 				(int) $monograph->getHideAuthor(),
 				$monograph->getCitations(),
+				$monograph->getSubmissionVersion(),
 				(int) $monograph->getId(),
 			)
 		);
@@ -157,7 +160,7 @@ class MonographDAO extends SubmissionDAO {
 
 		// Delete chapters and assigned chapter authors.
 		$chapterDao = DAORegistry::getDAO('ChapterDAO');
-		$chapters = $chapterDao->getChapters($submissionId);
+		$chapters = $chapterDao->getBySubmissionId($submissionId);
 		while ($chapter = $chapters->next()) {
 			// also removes Chapter Author associations
 			$chapterDao->deleteObject($chapter);
@@ -200,7 +203,8 @@ class MonographDAO extends SubmissionDAO {
 				' . $this->getFetchJoins() . '
 			WHERE	s.context_id = ? AND
 				(ps.submission_id IS NULL OR ps.date_published IS NULL) AND
-				s.submission_progress = 0',
+				s.submission_progress = 0
+			AND ps.is_current_submission_version = 1',
 			$params
 		);
 
@@ -284,6 +288,23 @@ class MonographDAO extends SubmissionDAO {
 	 */
 	protected function getCompletionConditions($completed) {
 		return ' ps.date_published IS ' . ($completed?'NOT ':'') . 'NULL ';
+	}
+
+	/**
+	 *
+	 * @param  $submissionId
+	 *
+	 * @return void
+	 */
+	function newVersion($submissionId) {
+		parent::newVersion($submissionId);
+	}
+
+	function versioningRelatedEntityDaos() {
+		return array_merge(
+			parent::versioningRelatedEntityDaos(),
+			array('PublicationFormatDAO', 'ChapterDAO')
+		);
 	}
 
 	/**
