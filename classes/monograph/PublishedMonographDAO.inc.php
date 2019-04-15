@@ -440,7 +440,7 @@ class PublishedMonographDAO extends MonographDAO {
 				':'') . '
 				LEFT JOIN features f ON (f.submission_id = s.submission_id AND f.assoc_type = ? AND f.assoc_id = ?)
 				LEFT JOIN new_releases nr ON (nr.submission_id = s.submission_id AND nr.assoc_type = ? AND nr.assoc_id = ?)
-			WHERE	ps.date_published IS NOT NULL AND s.context_id = ?
+			WHERE	ps.date_published IS NOT NULL AND s.context_id = ? AND ps.is_current_submission_version = 1 
 				' . ($searchText !== null?' AND (st.setting_value LIKE ? OR asgs.setting_value LIKE ? OR asfs.setting_value LIKE ?)':'') . '
 				' . ($assocType == ASSOC_TYPE_CATEGORY?' AND (c.category_id IS NOT NULL OR sc.category_id IS NOT NULL)':'') . '
 				' . ($assocType == ASSOC_TYPE_SERIES?' AND se.series_id = ' . $assocId:'') . '
